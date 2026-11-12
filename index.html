@@ -379,7 +379,10 @@
                     const base64String = reader.result.split(',')[1];
                     await analyzeWithGemini(base64String);
                 };
-                const analyzeWithGemini = async (base64Data) => {
+                reader.readAsDataURL(file);
+            };
+
+            const analyzeWithGemini = async (base64Data) => {
                 try {
                     const payload = {
                         contents: [{
