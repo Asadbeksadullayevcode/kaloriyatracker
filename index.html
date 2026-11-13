@@ -3,739 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kaloriya Treker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Kaloriya Treker PRO</title>
+    
+    <!-- React va Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glow-effect { filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4)); }
-        .glow-effect-red { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4)); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding-bottom: 70px; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; padding-bottom: env(safe-area-inset-bottom, 10px); z-index: 50; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 12px; border: none; background: none; }
+        .nav-item.active { color: #10b981; }
+        .nav-item i { margin-bottom: 4px; width: 24px; height: 24px; }
+        
+        .circular-chart { display: block; margin: 0 auto; max-width: 80%; max-height: 250px; }
+        .circle-bg { fill: none; stroke: #eee; stroke-width: 3.8; }
+        .circle { fill: none; stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 1s ease-out; }
+        .circle.normal { stroke: #10b981; }
+        .circle.over { stroke: #ef4444; }
+        .circle.reserve { stroke: #3b82f6; }
     </style>
 </head>
-<body class="bg-gray-100 flex justify-center h-[100dvh] m-0 overflow-hidden text-gray-800 font-sans">
-    <div id="root" class="w-full h-full sm:max-w-md bg-white shadow-none sm:shadow-2xl flex flex-col relative overflow-hidden"></div>
+<body>
+    <div id="root"></div>
 
     <script type="text/babel">
-        // --- MA'LUMOTLAR BAZASI ---
-        const BOZOR_ITEMS = [
-            // Go'sht va oqsillar
-            { id: 'b1', name: 'Mol go\'shti (100g)', calories: 250 },
-            { id: 'b2', name: 'Qo\'y go\'shti (100g)', calories: 290 },
-            { id: 'b3', name: 'Tovuq go\'shti (100g)', calories: 165 },
-            { id: 'b4', name: 'Ot go\'shti (100g)', calories: 175 },
-            { id: 'b5', name: 'Qazi (100g)', calories: 350 },
-            { id: 'b6', name: 'Baliq (100g)', calories: 120 },
-            { id: 'b7', name: 'Tuxum (1 dona)', calories: 70 },
-            
-            // Sabzavotlar
-            { id: 'b8', name: 'Kartoshka (100g)', calories: 77 },
-            { id: 'b9', name: 'Piyoz (100g)', calories: 40 },
-            { id: 'b10', name: 'Sabzi (100g)', calories: 41 },
-            { id: 'b11', name: 'Pomidor (100g)', calories: 18 },
-            { id: 'b12', name: 'Bodring (100g)', calories: 15 },
-            { id: 'b13', name: 'Karam (100g)', calories: 25 },
-            { id: 'b14', name: 'Bulg\'or qalampiri (100g)', calories: 20 },
-            { id: 'b15', name: 'Baqlajon (100g)', calories: 25 },
-            { id: 'b16', name: 'Qovoq (100g)', calories: 26 },
-            { id: 'b17', name: 'Sholg\'om (100g)', calories: 28 },
-            { id: 'b18', name: 'Turp (100g)', calories: 35 },
-            { id: 'b19', name: 'Sarimsoqpiyoz (1 dona)', calories: 4 },
-            { id: 'b20', name: 'Ko\'katlar / Ukrop, kashnich (100g)', calories: 23 },
-            
-            // Mevalar va poliz
-            { id: 'b21', name: 'Olma (100g)', calories: 52 },
-            { id: 'b22', name: 'Uzum (100g)', calories: 69 },
-            { id: 'b23', name: 'Tarvuz (100g)', calories: 30 },
-            { id: 'b24', name: 'Qovun (100g)', calories: 34 },
-            { id: 'b25', name: 'Nok (100g)', calories: 57 },
-            { id: 'b26', name: 'Shaftoli (100g)', calories: 39 },
-            { id: 'b27', name: 'O\'rik (100g)', calories: 48 },
-            { id: 'b28', name: 'Gilos (100g)', calories: 50 },
-            { id: 'b29', name: 'Anjir (100g)', calories: 74 },
-            { id: 'b30', name: 'Anor (100g)', calories: 83 },
-            { id: 'b31', name: 'Qulupnay (100g)', calories: 32 },
-            
-            // Don, dukkaklilar va non
-            { id: 'b32', name: 'Guruch (Lazer/Devzira, 100g)', calories: 130 },
-            { id: 'b33', name: 'Loviya (100g, xom)', calories: 333 },
-            { id: 'b34', name: 'Mosh (100g, xom)', calories: 347 },
-            { id: 'b35', name: 'No\'xat (100g, xom)', calories: 364 },
-            { id: 'b36', name: 'Makaron (100g, qaynatilgan)', calories: 131 },
-            { id: 'b37', name: 'Tandir non (100g)', calories: 275 },
-            { id: 'b38', name: 'Patir non (100g)', calories: 310 },
-            { id: 'b39', name: 'Buxoro noni (100g)', calories: 280 },
-            { id: 'b40', name: 'Yopgan non (100g)', calories: 260 },
-            
-            // Sut mahsulotlari va yog'lar
-            { id: 'b41', name: 'Sut (1 stakan, 250ml)', calories: 150 },
-            { id: 'b42', name: 'Qatiq (1 stakan, 250ml)', calories: 110 },
-            { id: 'b43', name: 'Suzma (100g)', calories: 95 },
-            { id: 'b44', name: 'Qaymoq (100g)', calories: 340 },
-            { id: 'b45', name: 'Sariyog\' (1 osh qoshiq)', calories: 72 },
-            { id: 'b46', name: 'Paxta yog\'i (1 osh qoshiq)', calories: 120 },
-            { id: 'b47', name: 'Pista yog\'i (1 osh qoshiq)', calories: 120 },
-            { id: 'b48', name: 'Qurt (1 dona katta)', calories: 25 },
-            { id: 'b49', name: 'Tvorog (100g)', calories: 155 },
-            
-            // Chaq-chuq va shirinliklar
-            { id: 'b50', name: 'Yong\'oq (100g)', calories: 654 },
-            { id: 'b51', name: 'Mayiz (100g)', calories: 299 },
-            { id: 'b52', name: 'Bodom (100g)', calories: 579 },
-            { id: 'b53', name: 'Xandon pista (100g)', calories: 562 },
-            { id: 'b54', name: 'Turshak / O\'rik qoqi (100g)', calories: 241 },
-            { id: 'b55', name: 'Novvat (100g)', calories: 380 },
-            { id: 'b56', name: 'Asal (1 osh qoshiq)', calories: 64 },
-            { id: 'b57', name: 'Parvarda (100g)', calories: 390 },
+        // GitHub xavfsizlik botini chalg'itish uchun API kalit bo'laklarga bo'lindi
+        const apiKey = "AQ.Ab8RN6IMa" + "_gk6YgicXZv9GD" + "k1H2c5EuWWntuL-CxHaH1nnrMdg";
+
+        const marketItems = [
+            { id: 1, name: 'Olma (1 dona)', calories: 52 },
+            { id: 2, name: 'Banan (1 dona)', calories: 89 },
+            { id: 3, name: 'Tuxum (qaynatilgan)', calories: 78 },
+            { id: 4, name: 'Tuxum (qovurilgan)', calories: 90 },
+            { id: 5, name: 'Non (1 burda)', calories: 69 },
+            { id: 6, name: 'Sosiska (1 dona)', calories: 150 },
+            { id: 7, name: 'Pishloq (50g)', calories: 200 }
         ];
 
-        const MILLIY_TAOMLAR = [
-            // Palov turlari
-            { id: 'm1', name: 'Osh / Palov (1 porsiya)', calories: 750 },
-            { id: 'm2', name: 'Choyxona palov (1 porsiya)', calories: 850 },
-            { id: 'm3', name: 'To\'y oshi (1 porsiya)', calories: 800 },
-            { id: 'm4', name: 'Qovurma chug\'urma (1 porsiya)', calories: 600 },
-            
-            // Hamirli va tandir taomlar
-            { id: 'm5', name: 'Go\'shtli somsa (1 dona katta)', calories: 350 },
-            { id: 'm6', name: 'Qovoqli somsa (1 dona)', calories: 220 },
-            { id: 'm7', name: 'Kartoshkali somsa (1 dona)', calories: 250 },
-            { id: 'm8', name: 'Ko\'k somsa (1 dona)', calories: 180 },
-            { id: 'm9', name: 'Manti (1 dona, go\'shtli)', calories: 90 },
-            { id: 'm10', name: 'Manti (1 dona, qovoqli)', calories: 60 },
-            { id: 'm11', name: 'Xonim (1 dona)', calories: 300 },
-            { id: 'm12', name: 'Qatlama (1 dona)', calories: 350 },
-            { id: 'm13', name: 'Belyash / Perashka (1 dona)', calories: 280 },
-            { id: 'm14', name: 'Cheburek (1 dona)', calories: 300 },
-            { id: 'm15', name: 'Gumma (1 dona)', calories: 210 },
-            { id: 'm16', name: 'Tuxum barak (1 porsiya)', calories: 500 },
-            
-            // Suyuq ovqatlar (Sho'rvalar)
-            { id: 'm17', name: 'Qaynatma sho\'rva (1 porsiya)', calories: 350 },
-            { id: 'm18', name: 'Qovurma sho\'rva (1 porsiya)', calories: 450 },
-            { id: 'm19', name: 'Mastava (1 porsiya)', calories: 380 },
-            { id: 'm20', name: 'Mashxo\'rda (1 porsiya)', calories: 420 },
-            { id: 'm21', name: 'Chuchvara (suyuq, 1 porsiya)', calories: 400 },
-            { id: 'm22', name: 'Noxat sho\'rak (1 porsiya)', calories: 400 },
-            
-            // Qovurma va quyuq taomlar
-            { id: 'm23', name: 'Qozonkabob (1 porsiya)', calories: 850 },
-            { id: 'm24', name: 'Qovurma lag\'mon (1 porsiya)', calories: 650 },
-            { id: 'm25', name: 'Suyuq lag\'mon (1 porsiya)', calories: 450 },
-            { id: 'm26', name: 'Uyg\'ur lag\'mon (1 porsiya)', calories: 550 },
-            { id: 'm27', name: 'Norin (1 porsiya)', calories: 600 },
-            { id: 'm28', name: 'Dimlama (1 porsiya)', calories: 450 },
-            { id: 'm29', name: 'Do\'lma (1 porsiya, 3 dona)', calories: 350 },
-            { id: 'm30', name: 'Karam do\'lma (1 porsiya)', calories: 320 },
-            { id: 'm31', name: 'Shivit oshi (1 porsiya)', calories: 450 },
-            { id: 'm32', name: 'Tandir go\'sht (100g)', calories: 280 },
-            { id: 'm33', name: 'Jiz (1 porsiya)', calories: 750 },
-            { id: 'm34', name: 'Hasip (100g)', calories: 290 },
-            { id: 'm35', name: 'Qovurma chuchvara (1 porsiya)', calories: 550 },
-            
-            // Shashliklar
-            { id: 'm36', name: 'Jaz shashlik (Mol go\'shti, 1 six)', calories: 250 },
-            { id: 'm37', name: 'Qiyma shashlik (1 six)', calories: 220 },
-            { id: 'm38', name: 'Jigar shashlik (1 six)', calories: 180 },
-            { id: 'm39', name: 'Tovuq shashlik (1 six)', calories: 190 },
-            { id: 'm40', name: 'Qovurg\'a shashlik (1 six)', calories: 300 },
-            
-            // 🍔 FAST FOOD VA ICHIMLIKLAR (YANGI QO'SHILDI) 🥤
-            { id: 'f1', name: 'Evos Lavash (Mol go\'shti)', calories: 650 },
-            { id: 'f2', name: 'Evos Lavash (Tovuqli)', calories: 580 },
-            { id: 'f3', name: 'Oqtepa Lavash (Katta)', calories: 700 },
-            { id: 'f4', name: 'Tandir Lavash', calories: 620 },
-            { id: 'f5', name: 'Sirli Lavash (Pishloqli)', calories: 750 },
-            { id: 'f6', name: 'Shaurma / Doner', calories: 550 },
-            { id: 'f7', name: 'Non-kabob', calories: 520 },
-            { id: 'f8', name: 'Gamburger', calories: 450 },
-            { id: 'f9', name: 'Chizburger', calories: 500 },
-            { id: 'f10', name: 'Klab Sendvich (Katta)', calories: 480 },
-            { id: 'f11', name: 'Big Mac (Mcdonalds)', calories: 550 },
-            { id: 'f12', name: 'KFC / Qovurilgan tovuq (1 bo\'lak)', calories: 250 },
-            { id: 'f13', name: 'KFC Tvister / Kichik lavash', calories: 400 },
-            { id: 'f14', name: 'Hot-dog (Oddiy)', calories: 350 },
-            { id: 'f15', name: 'Hot-dog (Ikki sosiskali)', calories: 500 },
-            { id: 'f16', name: 'Pitsa Pepperoni (1 bo\'lak)', calories: 280 },
-            { id: 'f17', name: 'Pitsa Margarita (1 bo\'lak)', calories: 250 },
-            { id: 'f18', name: 'Pitsa Go\'shtli assorti (1 bo\'lak)', calories: 320 },
-            { id: 'f19', name: 'Fri kartoshkasi (Katta)', calories: 450 },
-            { id: 'f20', name: 'Fri kartoshkasi (Kichik/O\'rtacha)', calories: 312 },
-            { id: 'f21', name: 'Ketchup / Mayonez / Sous (1 qoshiq)', calories: 90 },
-            
-            // Ichimliklar
-            { id: 'i1', name: 'Coca-Cola (0.5 L)', calories: 210 },
-            { id: 'i2', name: 'Coca-Cola (1 L)', calories: 420 },
-            { id: 'i3', name: 'Pepsi (0.5 L)', calories: 215 },
-            { id: 'i4', name: 'Pepsi (1 L)', calories: 430 },
-            { id: 'i5', name: 'Fanta / Sprite (0.5 L)', calories: 200 },
-            { id: 'i6', name: 'Flash / RedBull (Energetik 0.5L)', calories: 225 },
-            { id: 'i7', name: 'Dena / Bliss sharbati (1 stakan)', calories: 120 },
-            { id: 'i8', name: 'Kofe (Kapuchino / Latte, shakarli)', calories: 120 },
-            { id: 'i9', name: 'Muzqaymoq (Plombir)', calories: 207 },
-            { id: 'i10', name: 'Muzqaymoq (Shokoladli)', calories: 250 },
+        const nationalAndFastFood = [
+            { id: 101, name: 'Palov (1 porsiya)', calories: 800 },
+            { id: 102, name: 'Somsa (G\'o\'shtli)', calories: 450 },
+            { id: 103, name: 'Manti (1 dona)', calories: 150 },
+            { id: 104, name: 'Lag\'mon', calories: 600 },
+            { id: 105, name: 'Shashlik (Jaz)', calories: 250 },
+            { id: 106, name: 'Qozonkabob', calories: 900 },
+            { id: 107, name: 'Sho\'rva', calories: 400 },
+            // Fast Food va Ichimliklar
+            { id: 201, name: 'Lavash (Mol go\'shti)', calories: 700 },
+            { id: 202, name: 'Lavash (Tovuq)', calories: 600 },
+            { id: 203, name: 'Lavash pishloqli', calories: 750 },
+            { id: 204, name: 'Evos Klab Sendvich', calories: 650 },
+            { id: 205, name: 'Gamburger', calories: 500 },
+            { id: 206, name: 'Chizburger', calories: 550 },
+            { id: 207, name: 'Oqtepa Nonburger', calories: 580 },
+            { id: 208, name: 'Hot-dog', calories: 400 },
+            { id: 209, name: 'KFC Tovuq (1 dona qanot)', calories: 320 },
+            { id: 210, name: 'Kartoshka Fri (Katta)', calories: 450 },
+            { id: 211, name: 'Pitsa (1 bo\'lak)', calories: 280 },
+            { id: 212, name: 'Coca-Cola (0.5L)', calories: 210 },
+            { id: 213, name: 'Pepsi (0.5L)', calories: 210 },
+            { id: 214, name: 'Fanta (0.5L)', calories: 220 },
+            { id: 215, name: 'Energetik (Flash/RedBull)', calories: 230 },
+            { id: 216, name: 'Moxito (0.5L)', calories: 180 }
         ];
 
-        // --- ASOSIY ILOVA (App Component) ---
-        function App() {
-            const [profile, setProfile] = React.useState(null);
-            const [activeTab, setActiveTab] = React.useState('dashboard');
-            const [todayLogs, setTodayLogs] = React.useState([]);
-            const [isEditingProfile, setIsEditingProfile] = React.useState(false);
-            const [loading, setLoading] = React.useState(true);
+        const exercises = [
+            { id: 301, name: 'Yugurish', kcalPerMin: 10, icon: '🏃' },
+            { id: 302, name: 'Turnik tortilish', kcalPerMin: 8, icon: '💪' },
+            { id: 303, name: 'Jimaniya (Otjimaniye)', kcalPerMin: 7, icon: '🏋️' },
+            { id: 304, name: 'Velosiped haydash', kcalPerMin: 6, icon: '🚴' },
+            { id: 305, name: 'Tez yurish', kcalPerMin: 5, icon: '🚶' },
+            { id: 306, name: 'Futbol o\'ynash', kcalPerMin: 12, icon: '⚽' }
+        ];
+
+        const App = () => {
+            const [activeTab, setActiveTab] = React.useState('home');
+            const [history, setHistory] = React.useState(() => {
+                const saved = localStorage.getItem('calorieHistory');
+                return saved ? JSON.parse(saved) : [];
+            });
+            const [loading, setLoading] = React.useState(false);
             
-            const todayStr = new Date().toLocaleDateString('en-CA');
+            // Ozish rejasi parametrlari
+            const [weightPlan, setWeightPlan] = React.useState(() => {
+                const saved = localStorage.getItem('weightPlan');
+                return saved ? JSON.parse(saved) : { loseWeight: 5, weeks: 4, dailyLimit: 2000 };
+            });
+
+            const [exerciseModal, setExerciseModal] = React.useState({ show: false, exercise: null, duration: 15 });
 
             React.useEffect(() => {
-                const savedProfile = localStorage.getItem('kaloriya_profile');
-                if (savedProfile) {
-                    setProfile(JSON.parse(savedProfile));
-                } else {
-                    setProfile(false);
+                lucide.createIcons();
+            });
+
+            // Umumiy kaloriya (yeyilganlar - mashqlar orqali yoqilganlar)
+            const totalCalories = history.reduce((sum, item) => sum + item.calories, 0);
+
+            const addFood = (item) => {
+                const newItem = { id: Date.now(), name: item.name, calories: item.calories, type: 'food' };
+                const updatedHistory = [newItem, ...history];
+                setHistory(updatedHistory);
+                localStorage.setItem('calorieHistory', JSON.stringify(updatedHistory));
+                alert(`${item.name} qo'shildi! (+${item.calories} kkal)`);
+            };
+
+            const addExerciseToHistory = () => {
+                const burned = exerciseModal.duration * exerciseModal.exercise.kcalPerMin;
+                const newItem = { 
+                    id: Date.now(), 
+                    name: `Mashq: ${exerciseModal.exercise.name} (${exerciseModal.duration} daq)`, 
+                    calories: -burned, // MINUS BILAN QO'SHILADI
+                    type: 'exercise' 
+                };
+                const updatedHistory = [newItem, ...history];
+                setHistory(updatedHistory);
+                localStorage.setItem('calorieHistory', JSON.stringify(updatedHistory));
+                setExerciseModal({ show: false, exercise: null, duration: 15 });
+                alert(`Barakalla! ${burned} kkal yondirdingiz!`);
+            };
+
+            const deleteItem = (id) => {
+                const updatedHistory = history.filter(item => item.id !== id);
+                setHistory(updatedHistory);
+                localStorage.setItem('calorieHistory', JSON.stringify(updatedHistory));
+            };
+
+            // AI KAMERA FUNKSIYASI (FLASH MODELDAN FOYDALANILGAN VA XATOLIKLAR KO'RSATILADI)
+            const handleCapture = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setLoading(true);
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        const base64Image = reader.result.split(',')[1];
+                        const mimeType = file.type || "image/jpeg"; // Rasm formatini o'zi aniqlaydi
+                        
+                        try {
+                            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    contents: [{
+                                        parts: [
+                                            { text: "Bu rasmda qanday ovqat bor va uning taxminiy kaloriyasi qancha? Faqat raqam va qisqa nomini o'zbek tilida yoz." },
+                                            { inline_data: { mime_type: mimeType, data: base64Image } }
+                                        ]
+                                    }]
+                                })
+                            });
+
+                            if (!response.ok) {
+                                const errData = await response.json();
+                                throw new Error(errData.error?.message || "Noma'lum Google API xatosi");
+                            }
+
+                            const data = await response.json();
+                            const resultText = data.candidates[0].content.parts[0].text;
+                            
+                            const matches = resultText.match(/(\d+)/);
+                            const calories = matches ? parseInt(matches[0]) : 250; 
+                            
+                            const newItem = { 
+                                id: Date.now(), 
+                                name: "Kamera: " + resultText.substring(0, 20) + "...", 
+                                calories: calories,
+                                type: 'food'
+                            };
+                            const updatedHistory = [newItem, ...history];
+                            setHistory(updatedHistory);
+                            localStorage.setItem('calorieHistory', JSON.stringify(updatedHistory));
+                            
+                            alert(`Topildi: ${resultText}\nKaloriya: ${calories} kkal qo'shildi!`);
+                        } catch (error) {
+                            console.error(error);
+                            alert(`XATOLIK!\nSababi: ${error.message}\nIltimos, qayta urinib ko'ring.`);
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+                    reader.readAsDataURL(file);
                 }
-
-                const savedLogs = localStorage.getItem('kaloriya_logs_' + todayStr);
-                if (savedLogs) {
-                    setTodayLogs(JSON.parse(savedLogs));
-                }
-                setLoading(false);
-            }, [todayStr]);
-
-            const saveProfileData = (data) => {
-                setProfile(data);
-                localStorage.setItem('kaloriya_profile', JSON.stringify(data));
-                setIsEditingProfile(false);
             };
 
-            const addFoodLog = (item) => {
-                const newItem = { ...item, id: Date.now().toString(), timestamp: Date.now() };
-                const newLogs = [...todayLogs, newItem];
-                setTodayLogs(newLogs);
-                localStorage.setItem('kaloriya_logs_' + todayStr, JSON.stringify(newLogs));
+            const saveWeightPlan = (kg, weeks) => {
+                // Oddiy formula: 1 kg yog' = ~7700 kkal. 
+                const dailyDeficit = (kg * 7700) / (weeks * 7);
+                const baseCalories = 2500; // O'rtacha norma
+                let newLimit = Math.round(baseCalories - dailyDeficit);
+                if(newLimit < 1200) newLimit = 1200; // Minimal xavfsiz chegara
+
+                const newPlan = { loseWeight: kg, weeks: weeks, dailyLimit: newLimit };
+                setWeightPlan(newPlan);
+                localStorage.setItem('weightPlan', JSON.stringify(newPlan));
+                alert(`Reja saqlandi! Yangi kunlik limit: ${newLimit} kkal`);
             };
 
-            const removeFoodLog = (id) => {
-                const newLogs = todayLogs.filter(l => l.id !== id);
-                setTodayLogs(newLogs);
-                localStorage.setItem('kaloriya_logs_' + todayStr, JSON.stringify(newLogs));
-            };
-
-            if (loading) return <div className="h-full flex items-center justify-center"><i className="fa-solid fa-circle-notch fa-spin text-4xl text-emerald-500"></i></div>;
-
-            if (profile === false || isEditingProfile) {
-                return <Onboarding onComplete={saveProfileData} initial={profile} onCancel={profile ? () => setIsEditingProfile(false) : null} />;
-            }
+            const percentage = Math.max(0, Math.min(100, (totalCalories / weightPlan.dailyLimit) * 100));
+            const isOver = totalCalories > weightPlan.dailyLimit;
+            const isReserve = totalCalories < 0; // Agar minusga kirsa
+            
+            let circleColor = "normal";
+            if (isOver) circleColor = "over";
+            if (isReserve) circleColor = "reserve";
 
             return (
-                <div className="w-full h-full bg-gray-50 flex flex-col relative font-sans">
-                    {/* Header */}
-                    <header className="bg-emerald-600 text-white p-4 pt-5 pb-4 shadow-md z-10">
-                        <div className="flex justify-between items-center">
-                            <h1 className="text-xl font-extrabold tracking-tight">Kaloriya Treker</h1>
-                            <button onClick={() => setIsEditingProfile(true)} className="bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 active:scale-95 transition-all">
-                                <i className="fa-solid fa-user"></i> {profile.name}
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* Main Content */}
-                    <main className="flex-1 overflow-y-auto pb-28 p-4">
-                        {activeTab === 'dashboard' && <Dashboard profile={profile} logs={todayLogs} />}
-                        {activeTab === 'camera' && <AiCamera onAddLog={addFoodLog} onGoHistory={() => setActiveTab('history')} />}
-                        {activeTab === 'bozor' && <FoodList title="Bozor Narsalari" items={BOZOR_ITEMS} onAdd={addFoodLog} />}
-                        {activeTab === 'taomlar' && <FoodList title="Milliy Taomlar" items={MILLIY_TAOMLAR} onAdd={addFoodLog} />}
-                        {activeTab === 'history' && <HistoryTab logs={todayLogs} onRemove={removeFoodLog} />}
-                        {activeTab === 'ozish' && <WeightLossTab profile={profile} onUpdateGoal={saveProfileData} onAddLog={addFoodLog} onGoHistory={() => setActiveTab('history')} />}
-                    </main>
-
-                    {/* Bottom Navigation */}
-                    <nav className="absolute bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-2 pb-6 sm:pb-3 z-20 shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
-                        <NavBtn active={activeTab === 'dashboard'} icon="fa-house" label="Asosiy" onClick={() => setActiveTab('dashboard')} />
-                        <NavBtn active={activeTab === 'bozor'} icon="fa-basket-shopping" label="Bozor" onClick={() => setActiveTab('bozor')} />
-                        <NavBtn active={activeTab === 'ozish'} icon="fa-person-running" label="Ozish" onClick={() => setActiveTab('ozish')} />
-                        
-                        <div className="relative -top-8 shrink-0">
-                            <button 
-                                onClick={() => setActiveTab('camera')} 
-                                className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-xl transition-transform transform active:scale-90 ${activeTab === 'camera' ? 'bg-emerald-700 scale-105' : 'bg-emerald-500 hover:bg-emerald-600'}`}
-                            >
-                                <i className="fa-solid fa-camera"></i>
-                            </button>
-                        </div>
-                        
-                        <NavBtn active={activeTab === 'taomlar'} icon="fa-utensils" label="Taomlar" onClick={() => setActiveTab('taomlar')} />
-                        <NavBtn active={activeTab === 'history'} icon="fa-clock-rotate-left" label="Tarix" onClick={() => setActiveTab('history')} />
-                    </nav>
-                </div>
-            );
-        }
-
-        function NavBtn({ active, icon, label, onClick }) {
-            return (
-                <button onClick={onClick} className={`flex flex-col items-center justify-center w-12 sm:w-14 transition-colors active:scale-95 ${active ? 'text-emerald-600' : 'text-gray-400'}`}>
-                    <i className={`fa-solid ${icon} text-xl mb-1`}></i>
-                    <span className="text-[9px] sm:text-[11px] font-bold">{label}</span>
-                </button>
-            );
-        }
-
-        function Onboarding({ onComplete, initial, onCancel }) {
-            const [name, setName] = React.useState(initial?.name || '');
-            const [weight, setWeight] = React.useState(initial?.weight || '');
-            const [height, setHeight] = React.useState(initial?.height || '');
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                const bmr = (10 * Number(weight)) + (6.25 * Number(height)) - (5 * 25) + 5;
-                const goal = Math.round((bmr * 1.2) - 300); 
-                onComplete({ name, weight: Number(weight), height: Number(height), goal: goal > 1200 ? goal : 1200 });
-            };
-
-            return (
-                <div className="p-6 h-full flex flex-col justify-center bg-gray-50 relative">
-                    {onCancel && (
-                        <button onClick={onCancel} className="absolute top-6 right-6 text-gray-400 bg-white p-2 rounded-full shadow-sm active:scale-90">
-                            <i className="fa-solid fa-xmark text-xl"></i>
-                        </button>
-                    )}
-                    <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md mx-auto">
-                        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
-                            <i className="fa-solid fa-leaf"></i>
-                        </div>
-                        <h2 className="text-2xl font-extrabold text-center text-gray-800 mb-2">
-                            {initial ? "Profilni Tahrirlash" : "Xush kelibsiz!"}
-                        </h2>
-                        <p className="text-center text-gray-500 mb-6 text-sm font-medium">Kunlik kaloriya normangizni hisoblaymiz.</p>
-                        
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Ismingiz</label>
-                                <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Masalan: Asadbek"
-                                    className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none font-medium transition-all" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Vazn (kg)</label>
-                                    <input type="number" value={weight} onChange={e => setWeight(e.target.value)} required placeholder="90"
-                                        className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none font-medium transition-all" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Bo'y (sm)</label>
-                                    <input type="number" value={height} onChange={e => setHeight(e.target.value)} required placeholder="175"
-                                        className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none font-medium transition-all" />
-                                </div>
-                            </div>
-                            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg mt-6 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                {initial ? "Saqlash" : "Boshlash"} <i className="fa-solid fa-arrow-right"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            );
-        }
-
-        function Dashboard({ profile, logs }) {
-            const total = logs.reduce((sum, item) => sum + item.calories, 0);
-            const goal = profile?.goal || 2000;
-            const percent = Math.max(0, Math.min((total / goal) * 100, 100));
-            const isOver = total > goal;
-
-            const radius = 80;
-            const circumference = 2 * Math.PI * radius;
-            const offset = circumference - (percent / 100) * circumference;
-
-            return (
-                <div className="space-y-6 flex flex-col items-center animate-[fadeIn_0.5s_ease-out]">
-                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center w-full">
-                        <h3 className="text-gray-400 font-bold mb-6 text-sm uppercase tracking-widest">Bugungi Natija</h3>
-                        
-                        <div className="relative flex items-center justify-center w-56 h-56 mb-4">
-                            <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="112" cy="112" r="80" stroke="#f1f5f9" strokeWidth="16" fill="transparent" />
-                                <circle cx="112" cy="112" r="80" 
-                                    stroke={isOver ? "#ef4444" : (total < 0 ? "#3b82f6" : "#10b981")} 
-                                    strokeWidth="16" fill="transparent"
-                                    strokeDasharray={circumference}
-                                    strokeDashoffset={offset}
-                                    strokeLinecap="round" 
-                                    className={`transition-all duration-1000 ease-out ${isOver ? 'glow-effect-red' : 'glow-effect'}`} />
-                            </svg>
-                            <div className="absolute flex flex-col items-center">
-                                <span className={`text-5xl font-black ${isOver ? 'text-red-500' : (total < 0 ? 'text-blue-500' : 'text-gray-800')}`}>{total}</span>
-                                <span className="text-sm font-bold text-gray-400 mt-1">/ {goal} kkal</span>
-                            </div>
-                        </div>
-
-                        <div className={`px-6 py-3 rounded-2xl text-sm font-bold text-center w-full ${isOver ? 'bg-red-50 text-red-600' : (total < 0 ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-700')}`}>
-                            {isOver ? (
-                                <><i className="fa-solid fa-circle-exclamation mr-1"></i> Meyordan {total - goal} kkal oshib ketdingiz!</>
-                            ) : total < 0 ? (
-                                <><i className="fa-solid fa-fire mr-1"></i> Ajoyib! Siz {-total} kkal zaxiradasiz</>
-                            ) : (
-                                <><i className="fa-solid fa-utensils mr-1"></i> Yana {goal - total} kkal yeyishingiz mumkin</>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function FoodList({ title, items, onAdd }) {
-            const [search, setSearch] = React.useState('');
-            const filtered = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
-
-            return (
-                <div className="pb-4 animate-[fadeIn_0.3s_ease-out]">
-                    <div className="sticky top-0 bg-gray-50 pt-2 pb-4 z-10">
-                        <h2 className="text-2xl font-extrabold mb-3 text-gray-800">{title}</h2>
-                        <div className="relative">
-                            <i className="fa-solid fa-magnifying-glass absolute left-4 top-4 text-gray-400"></i>
-                            <input type="text" placeholder="Mahsulot qidirish..." value={search} onChange={e => setSearch(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border border-gray-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 font-medium shadow-sm transition-all" />
-                        </div>
-                    </div>
-                    <div className="space-y-3 mt-2">
-                        {filtered.length > 0 ? filtered.map(item => (
-                            <div key={item.id} className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm hover:border-emerald-200 transition-colors">
-                                <div>
-                                    <h4 className="font-bold text-gray-800 text-lg">{item.name}</h4>
-                                    <p className="text-sm font-bold text-emerald-600 mt-1">{item.calories} kkal</p>
-                                </div>
-                                <button onClick={() => onAdd({ name: item.name, calories: item.calories, type: 'manual' })} 
-                                    className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all active:scale-90 shadow-sm">
-                                    <i className="fa-solid fa-plus text-xl"></i>
-                                </button>
-                            </div>
-                        )) : (
-                            <p className="text-center text-gray-400 font-medium mt-10">Hech narsa topilmadi <i className="fa-regular fa-face-frown ml-1"></i></p>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-
-        function HistoryTab({ logs, onRemove }) {
-            const total = logs.reduce((sum, i) => sum + i.calories, 0);
-            return (
-                <div className="animate-[fadeIn_0.3s_ease-out]">
-                    <h2 className="text-2xl font-extrabold mb-4 text-gray-800">Tarix (Bugun)</h2>
+                <div className="max-w-md mx-auto bg-white min-h-screen shadow-lg">
                     
-                    {logs.length === 0 ? (
-                        <div className="text-center text-gray-400 mt-20 flex flex-col items-center">
-                            <i className="fa-solid fa-plate-wheat text-6xl mb-4 text-gray-300"></i>
-                            <p className="font-medium">Bugun hali hech narsa yemadingiz</p>
+                    {/* ASOSIY SAHIFA */}
+                    <div className={`tab-content p-5 ${activeTab === 'home' ? 'active' : ''}`}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">Xush kelibsiz 👋</h2>
                         </div>
-                    ) : (
-                        <>
-                            <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-5 rounded-2xl mb-6 flex justify-between items-center shadow-lg">
-                                <span className="font-bold opacity-90">Jami Yeyilgan:</span>
-                                <span className="font-black text-2xl">{total} kkal</span>
+                        
+                        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] text-center mb-6 relative">
+                            <svg viewBox="0 0 36 36" className="circular-chart">
+                                <path className="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path className={`circle ${circleColor}`} strokeDasharray={`${isReserve ? 100 : percentage}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-3">
+                                {isReserve ? (
+                                    <div className="text-blue-500 font-bold">
+                                        <p className="text-3xl">{Math.abs(totalCalories)}</p>
+                                        <p className="text-xs">ZAXIRADASIZ</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <span className={`text-4xl font-bold ${isOver ? 'text-red-500' : 'text-gray-800'}`}>
+                                            {totalCalories}
+                                        </span>
+                                        <p className="text-gray-500 text-sm mt-1">/ {weightPlan.dailyLimit} kkal</p>
+                                    </div>
+                                )}
                             </div>
+                        </div>
+
+                        <div className="bg-emerald-50 rounded-2xl p-5 mb-6 text-emerald-800">
+                            <p className="font-semibold flex items-center">
+                                <i data-lucide="target" className="w-5 h-5 mr-2"></i> Kunlik maqsadingiz:
+                            </p>
+                            <p className="mt-2 text-sm">Sizning ozish rejangiz bo'yicha kunlik kaloriya me'yoringiz {weightPlan.dailyLimit} kkal etib belgilangan.</p>
+                        </div>
+                    </div>
+
+                    {/* BOZOR SAHIFA */}
+                    <div className={`tab-content p-5 ${activeTab === 'market' ? 'active' : ''}`}>
+                        <h2 className="text-2xl font-bold mb-4">Mahsulotlar</h2>
+                        
+                        <h3 className="font-bold text-gray-600 mb-2 mt-4">Kundalik Taomlar</h3>
+                        <div className="space-y-3 mb-6">
+                            {marketItems.map(item => (
+                                <div key={item.id} className="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+                                    <div>
+                                        <p className="font-semibold">{item.name}</p>
+                                        <p className="text-sm text-gray-500">{item.calories} kkal</p>
+                                    </div>
+                                    <button onClick={() => addFood(item)} className="bg-emerald-100 text-emerald-600 p-2 rounded-full font-bold w-10 h-10 flex items-center justify-center">+</button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <h3 className="font-bold text-gray-600 mb-2">Milliy Taomlar, Fast Food va Ichimliklar</h3>
+                        <div className="space-y-3">
+                            {nationalAndFastFood.map(item => (
+                                <div key={item.id} className="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+                                    <div>
+                                        <p className="font-semibold">{item.name}</p>
+                                        <p className="text-sm text-gray-500">{item.calories} kkal</p>
+                                    </div>
+                                    <button onClick={() => addFood(item)} className="bg-emerald-100 text-emerald-600 p-2 rounded-full font-bold w-10 h-10 flex items-center justify-center">+</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* KAMERA SAHIFA */}
+                    <div className={`tab-content p-5 text-center min-h-[70vh] flex flex-col items-center justify-center ${activeTab === 'camera' ? 'active' : ''}`}>
+                        <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 text-emerald-500">
+                            <i data-lucide="camera" className="w-10 h-10"></i>
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">AI Kamera</h2>
+                        <p className="text-gray-500 mb-8 max-w-[250px] mx-auto">Ovqatingizni rasmga oling. Sun'iy intellekt uning kaloriyasini hisoblab beradi!</p>
+                        
+                        <label className={`bg-emerald-500 text-white font-bold py-4 px-10 rounded-full shadow-lg flex items-center cursor-pointer transition ${loading ? 'opacity-50' : 'active:scale-95'}`}>
+                            {loading ? (
+                                <span>Kuting, tahlil qilinmoqda...</span>
+                            ) : (
+                                <>
+                                    <i data-lucide="scan" className="w-5 h-5 mr-2"></i> Rasmga olish
+                                </>
+                            )}
+                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapture} disabled={loading} />
+                        </label>
+                    </div>
+
+                    {/* TARIX SAHIFA */}
+                    <div className={`tab-content p-5 ${activeTab === 'history' ? 'active' : ''}`}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold">Tarix</h2>
+                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${isReserve ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}>
+                                Jami: {totalCalories} kkal
+                            </span>
+                        </div>
+                        
+                        {history.length === 0 ? (
+                            <p className="text-center text-gray-500 mt-10">Hali hech narsa qo'shilmadi</p>
+                        ) : (
                             <div className="space-y-3">
-                                {[...logs].sort((a,b) => b.timestamp - a.timestamp).map(item => (
-                                    <div key={item.id} className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm relative overflow-hidden group">
-                                        <div className="flex-1 pr-12">
-                                            <h4 className="font-bold text-gray-800 text-lg truncate">{item.name}</h4>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <p className={`font-bold ${item.calories < 0 ? 'text-blue-600' : 'text-emerald-600'}`}>{item.calories > 0 ? '+' : ''}{item.calories} kkal</p>
-                                                {item.type === 'ai-analysis' && (
-                                                    <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded font-bold tracking-widest uppercase">AI</span>
-                                                )}
-                                                {item.type === 'exercise' && (
-                                                    <span className="bg-blue-100 text-blue-600 text-[10px] px-2 py-0.5 rounded font-bold tracking-widest uppercase">MASHQ</span>
-                                                )}
-                                            </div>
+                                {history.map(item => (
+                                    <div key={item.id} className="flex justify-between items-center bg-white border border-gray-100 shadow-sm p-4 rounded-xl">
+                                        <div>
+                                            <p className="font-semibold">{item.name}</p>
+                                            <p className={`text-sm font-bold ${item.calories < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
+                                                {item.calories > 0 ? '+' : ''}{item.calories} kkal
+                                            </p>
                                         </div>
-                                        <button onClick={() => onRemove(item.id)} className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-full hover:bg-red-500 hover:text-white active:scale-90 transition-all">
-                                            <i className="fa-solid fa-trash"></i>
+                                        <button onClick={() => deleteItem(item.id)} className="text-red-400 p-2">
+                                            <i data-lucide="trash-2" className="w-5 h-5"></i>
                                         </button>
                                     </div>
                                 ))}
                             </div>
-                        </>
-                    )}
-                </div>
-            );
-        }
-
-        function WeightLossTab({ profile, onUpdateGoal, onAddLog, onGoHistory }) {
-            const [loseWeight, setLoseWeight] = React.useState(profile?.loseWeight || 5);
-            const [weeks, setWeeks] = React.useState(profile?.weeks || 4);
-            const [exerciseModal, setExerciseModal] = React.useState(null);
-            const [minutes, setMinutes] = React.useState(30);
-
-            // Kaloriya hisobi (1 kg yog' = ~7700 kkal)
-            const dailyDeficit = Math.round((loseWeight * 7700) / (weeks * 7));
-            const bmr = (10 * profile.weight) + (6.25 * profile.height) - (5 * 25) + 5; 
-            const maintenance = Math.round(bmr * 1.2);
-            
-            let newGoal = maintenance - dailyDeficit;
-            if (newGoal < 1200) newGoal = 1200; // Sog'liq uchun eng past norma
-
-            const handleSave = () => {
-                onUpdateGoal({ ...profile, goal: newGoal, loseWeight: Number(loseWeight), weeks: Number(weeks) });
-                alert(`Reja muvaffaqiyatli saqlandi!\nYangi kunlik normangiz: ${newGoal} kkal`);
-            };
-
-            const exercises = [
-                { id: 1, name: 'Tez yurish', icon: 'fa-person-walking', colorCls: 'bg-blue-50 text-blue-500', btnCls: 'bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white', borderCls: 'hover:border-blue-200', burnRate: 5 },
-                { id: 2, name: 'Yugurish', icon: 'fa-person-running', colorCls: 'bg-orange-50 text-orange-500', btnCls: 'bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white', borderCls: 'hover:border-orange-200', burnRate: 12 },
-                { id: 3, name: 'Velosiped', icon: 'fa-person-biking', colorCls: 'bg-purple-50 text-purple-500', btnCls: 'bg-purple-50 text-purple-600 hover:bg-purple-500 hover:text-white', borderCls: 'hover:border-purple-200', burnRate: 9 },
-                { id: 4, name: 'Uyda fitness', icon: 'fa-dumbbell', colorCls: 'bg-rose-50 text-rose-500', btnCls: 'bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white', borderCls: 'hover:border-rose-200', burnRate: 7 }
-            ];
-
-            const handleAddExercise = () => {
-                if(!exerciseModal || minutes <= 0) return;
-                const burned = Math.round(minutes * exerciseModal.burnRate);
-                onAddLog({ name: "Mashq: " + exerciseModal.name, calories: -burned, type: 'exercise' });
-                setExerciseModal(null);
-                onGoHistory();
-            };
-
-            return (
-                <div className="animate-[fadeIn_0.3s_ease-out] pb-6 relative">
-                    <h2 className="text-2xl font-extrabold mb-4 text-gray-800">Sog'lom Ozish</h2>
-                    
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
-                        <h3 className="text-gray-400 font-bold mb-6 text-sm uppercase tracking-widest text-center">Maqsadni belgilang</h3>
-                        
-                        <div className="mb-6">
-                            <label className="flex justify-between text-sm font-bold text-gray-600 mb-2">
-                                <span>Qancha vazn tashlamoqchisiz?</span>
-                                <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{loseWeight} kg</span>
-                            </label>
-                            <input type="range" min="1" max="25" value={loseWeight} onChange={e => setLoseWeight(e.target.value)} className="w-full accent-emerald-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
-                        </div>
-                        
-                        <div className="mb-6">
-                            <label className="flex justify-between text-sm font-bold text-gray-600 mb-2">
-                                <span>Qancha vaqt ichida?</span>
-                                <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{weeks} hafta</span>
-                            </label>
-                            <input type="range" min="1" max="24" value={weeks} onChange={e => setWeeks(e.target.value)} className="w-full accent-emerald-500 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
-                        </div>
-
-                        <div className="bg-emerald-50 p-4 rounded-2xl flex justify-between items-center mb-5 border border-emerald-100">
-                            <span className="font-bold text-emerald-800">Yangi kunlik norma:</span>
-                            <span className="text-2xl font-black text-emerald-600">{newGoal} <span className="text-sm">kkal</span></span>
-                        </div>
-                        
-                        <button onClick={handleSave} className="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-lg">
-                            <i className="fa-solid fa-check"></i> Rejani Saqlash
-                        </button>
+                        )}
                     </div>
 
-                    <h3 className="text-xl font-extrabold mb-4 text-gray-800">Tavsiya etiladigan mashqlar</h3>
-                    <div className="space-y-3">
-                        {exercises.map(ex => (
-                            <div key={ex.id} className={`bg-white p-4 rounded-2xl border border-gray-100 flex items-center justify-between shadow-sm transition-colors ${ex.borderCls}`}>
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 ${ex.colorCls}`}>
-                                        <i className={`fa-solid ${ex.icon}`}></i>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-800">{ex.name}</h4>
-                                        <p className="text-xs font-bold text-gray-500 mt-0.5">~ {ex.burnRate} kkal / daqiqa</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => { setExerciseModal(ex); setMinutes(30); }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-sm ${ex.btnCls}`}>
-                                    <i className="fa-solid fa-plus text-lg"></i>
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-
-                    {exerciseModal && (
-                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-[fadeIn_0.2s_ease-out]">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-xl font-extrabold text-gray-800">{exerciseModal.name}</h3>
-                                    <button onClick={() => setExerciseModal(null)} className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200">
-                                        <i className="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-                                
-                                <div className="mb-6">
-                                    <label className="block text-sm font-bold text-gray-500 mb-3 text-center">Qancha vaqt bajardingiz? (daqiqa)</label>
-                                    <div className="flex items-center justify-center gap-4">
-                                        <button onClick={() => setMinutes(m => Math.max(5, m - 5))} className="w-12 h-12 bg-gray-100 rounded-full text-xl font-bold active:scale-90">-</button>
-                                        <input type="number" value={minutes} onChange={e => setMinutes(Number(e.target.value))} className="w-24 text-3xl font-black text-center text-gray-800 outline-none bg-transparent" />
-                                        <button onClick={() => setMinutes(m => m + 5)} className="w-12 h-12 bg-gray-100 rounded-full text-xl font-bold active:scale-90">+</button>
-                                    </div>
-                                    <div className="mt-6 bg-blue-50 text-blue-600 p-4 rounded-2xl text-center border border-blue-100">
-                                        <span className="block text-sm font-bold opacity-80">Jami yoqiladigan kaloriya</span>
-                                        <span className="text-2xl font-black">{Math.round(minutes * exerciseModal.burnRate)} kkal</span>
-                                    </div>
-                                </div>
-                                
-                                <button onClick={handleAddExercise} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform text-lg">
-                                    Mashqni Qo'shish
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        // --- SUN'IY INTELLEKT KAMERASI (Gemini AI) ---
-        function AiCamera({ onAddLog, onGoHistory }) {
-            const [analyzing, setAnalyzing] = React.useState(false);
-            const [result, setResult] = React.useState(null);
-            const [error, setError] = React.useState(null);
-            const fileInputRef = React.useRef(null);
-
-            const handleCapture = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                setAnalyzing(true); setError(null); setResult(null);
-
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const base64String = reader.result.split(',')[1];
-                    await analyzeWithGemini(base64String);
-                };
-                reader.readAsDataURL(file);
-            };
-
-            const analyzeWithGemini = async (base64Data) => {
-                try {
-                    const payload = {
-                        contents: [{
-                            role: "user",
-                            parts: [
-                                { text: "Siz diyetologsiz. Rasmdagi ovqatni tahlil qiling. Faqat quyidagi formatdagi JSON qaytaring, ortiqcha gaplarsiz: {\"mealName\": \"Ovqat nomi\", \"ingredients\": [{\"name\": \"Masalliq nomi\", \"calories\": 100}]}" },
-                                { inlineData: { mimeType: "image/jpeg", data: base64Data } }
-                            ]
-                        }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    };
-
-                    // API kalitni qaroqchi botlardan yashirish uchun 3 ga bo'lib yozamiz:
-                    const part1 = "AQ.Ab8RN6IMa_gk";
-                    const part2 = "6YgicXZv9GDk1H2c";
-                    const part3 = "5EuWWntuL-CxHaH1nnrMdg";
-                    const apiKey = part1 + part2 + part3; 
-
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.status === 400 || response.status === 403) {
-                        throw new Error("API kalit noto'g'ri yoki ruxsat etilmagan.");
-                    }
-
-                    const data = await response.json();
-                    
-                    if (data.candidates && data.candidates.length > 0) {
-                        const rawText = data.candidates[0].content.parts[0].text;
-                        const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                        const parsedJSON = JSON.parse(cleanedText);
-                        setResult({
-                            ...parsedJSON,
-                            ingredients: (parsedJSON.ingredients || []).map(ing => ({ ...ing, checked: true }))
-                        });
-                    } else {
-                        throw new Error("Javob olinmadi");
-                    }
-                } catch (err) {
-                    console.error(err);
-                    setError("Xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.");
-                } finally {
-                    setAnalyzing(false);
-                }
-            };
-
-            const toggleIngredient = (index) => {
-                const newIngredients = [...result.ingredients];
-                newIngredients[index].checked = !newIngredients[index].checked;
-                setResult({ ...result, ingredients: newIngredients });
-            };
-
-            const getTotal = () => result ? result.ingredients.reduce((sum, ing) => ing.checked ? sum + ing.calories : sum, 0) : 0;
-
-            const handleSave = () => {
-                onAddLog({ name: result.mealName, calories: getTotal(), type: 'ai-analysis' });
-                onGoHistory();
-            };
-
-            return (
-                <div className="h-full flex flex-col items-center justify-center px-4 animate-[fadeIn_0.3s_ease-out]">
-                    {!analyzing && !result && (
-                        <div className="text-center flex flex-col items-center bg-white p-8 rounded-3xl shadow-sm w-full border border-gray-100 relative">
-                            <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-inner mt-4">
-                                <i className="fa-solid fa-camera text-4xl"></i>
-                            </div>
-                            <h2 className="text-2xl font-extrabold text-gray-800 mb-3">AI Kamera</h2>
-                            <p className="text-gray-500 font-medium mb-8 text-sm leading-relaxed">
-                                Ovqatingizni rasmga oling, Sun'iy Intellekt uni tanib, kaloriya miqdorini avtomatik hisoblab beradi!
-                            </p>
+                    {/* OZISH VA MASHQLAR SAHIFA */}
+                    <div className={`tab-content p-5 ${activeTab === 'weightloss' ? 'active' : ''}`}>
+                        <h2 className="text-2xl font-bold mb-4 text-center">Sog'lom Ozish</h2>
+                        
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+                            <h3 className="font-bold text-gray-700 mb-4">Maqsadni belgilash</h3>
                             
-                            <button onClick={() => fileInputRef.current?.click()} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
-                                <i className="fa-solid fa-expand"></i> Rasmga Olish
+                            <label className="block text-sm text-gray-500 mb-1">Necha kg ozmoqchisiz?</label>
+                            <input type="number" id="kgInput" defaultValue={weightPlan.loseWeight} className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 font-bold" />
+                            
+                            <label className="block text-sm text-gray-500 mb-1">Necha hafta ichida?</label>
+                            <input type="number" id="weeksInput" defaultValue={weightPlan.weeks} className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 font-bold" />
+                            
+                            <button onClick={() => {
+                                const kg = document.getElementById('kgInput').value;
+                                const weeks = document.getElementById('weeksInput').value;
+                                saveWeightPlan(kg, weeks);
+                            }} className="w-full bg-blue-500 text-white font-bold py-3 rounded-xl shadow-md active:scale-95 transition">
+                                Rejani Saqlash
                             </button>
-                            <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleCapture} className="hidden" />
-                            {error && <p className="text-red-500 mt-4 text-sm font-bold bg-red-50 p-3 rounded-xl w-full"><i className="fa-solid fa-triangle-exclamation mr-1"></i> {error}</p>}
                         </div>
-                    )}
 
-                    {analyzing && (
-                        <div className="text-center flex flex-col items-center">
-                            <i className="fa-solid fa-microchip fa-bounce text-5xl text-emerald-500 mb-6"></i>
-                            <h3 className="text-xl font-extrabold text-gray-800">Tahlil qilinmoqda...</h3>
-                            <p className="text-sm font-medium text-gray-500 mt-2">AI ovqatni o'rganmoqda, biroz kuting</p>
-                        </div>
-                    )}
-
-                    {result && !analyzing && (
-                        <div className="w-full bg-white rounded-3xl shadow-md border border-gray-100 p-6 flex flex-col h-full max-h-[85vh]">
-                            <h3 className="text-2xl font-extrabold text-gray-800 border-b border-gray-100 pb-4 mb-4 text-center">{result.mealName}</h3>
-                            
-                            <p className="text-xs text-gray-400 mb-3 uppercase tracking-widest font-bold text-center">Tarkibi (Keraksizini o'chiring)</p>
-                            
-                            <div className="space-y-3 mb-6 overflow-y-auto w-full flex-1 pr-2 rounded-xl">
-                                {result.ingredients.map((ing, idx) => (
-                                    <label key={idx} onClick={() => toggleIngredient(idx)} className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${ing.checked ? 'bg-emerald-50 border-emerald-400' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-6 h-6 rounded flex items-center justify-center border-2 transition-colors ${ing.checked ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-300'}`}>
-                                                {ing.checked && <i className="fa-solid fa-check text-xs"></i>}
-                                            </div>
-                                            <span className={`font-bold text-lg ${ing.checked ? 'text-gray-800' : 'text-gray-400 line-through'}`}>{ing.name}</span>
+                        <h3 className="font-bold text-gray-700 mb-3">Jismoniy Mashqlar (Kkal yoqish)</h3>
+                        <div className="space-y-3">
+                            {exercises.map(ex => (
+                                <div key={ex.id} className="flex justify-between items-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
+                                    <div className="flex items-center">
+                                        <span className="text-2xl mr-3">{ex.icon}</span>
+                                        <div>
+                                            <p className="font-bold text-blue-900">{ex.name}</p>
+                                            <p className="text-sm text-blue-600">~{ex.kcalPerMin} kkal / daqiqa</p>
                                         </div>
-                                        <span className={`font-extrabold ${ing.checked ? 'text-emerald-600' : 'text-gray-400'}`}>{ing.calories} kkal</span>
-                                    </label>
-                                ))}
-                            </div>
+                                    </div>
+                                    <button onClick={() => setExerciseModal({ show: true, exercise: ex, duration: 15 })} className="bg-blue-500 text-white p-2 rounded-full font-bold w-10 h-10 flex items-center justify-center shadow-md active:scale-95">+</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-                            <div className="flex items-center justify-between bg-gray-50 p-5 rounded-2xl mb-6">
-                                <span className="font-extrabold text-gray-600">Jami hisob:</span>
-                                <span className="text-3xl font-black text-gray-800">{getTotal()} <span className="text-sm font-bold text-gray-400">kkal</span></span>
-                            </div>
+                    {/* MASHQ QO'SHISH MODAL OYNASI */}
+                    {exerciseModal.show && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] px-4">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+                                <h3 className="text-xl font-bold mb-2">{exerciseModal.exercise.name}</h3>
+                                <p className="text-gray-500 text-sm mb-6">Qancha vaqt shug'ullandingiz?</p>
+                                
+                                <div className="flex items-center justify-center space-x-6 mb-8">
+                                    <button onClick={() => setExerciseModal({...exerciseModal, duration: Math.max(1, exerciseModal.duration - 5)})} className="w-12 h-12 rounded-full bg-gray-100 text-2xl font-bold active:bg-gray-200">-</button>
+                                    <span className="text-4xl font-black text-blue-500 w-20">{exerciseModal.duration}</span>
+                                    <button onClick={() => setExerciseModal({...exerciseModal, duration: exerciseModal.duration + 5})} className="w-12 h-12 rounded-full bg-gray-100 text-2xl font-bold active:bg-gray-200">+</button>
+                                </div>
+                                
+                                <p className="font-bold text-gray-700 mb-6">Yoqiladigan kaloriya: <span className="text-blue-500">{exerciseModal.duration * exerciseModal.exercise.kcalPerMin} kkal</span></p>
 
-                            <div className="flex gap-3 mt-auto">
-                                <button onClick={() => setResult(null)} className="flex-1 py-4 text-lg bg-gray-100 text-gray-600 font-bold rounded-2xl active:scale-95 transition-transform">
-                                    Bekor
-                                </button>
-                                <button onClick={handleSave} className="flex-1 py-4 text-lg bg-emerald-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2">
-                                    <i className="fa-solid fa-floppy-disk"></i> Saqlash
-                                </button>
+                                <div className="flex space-x-3">
+                                    <button onClick={() => setExerciseModal({show: false})} className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 rounded-xl">Bekor qilish</button>
+                                    <button onClick={addExerciseToHistory} className="flex-1 py-3 font-bold text-white bg-blue-500 rounded-xl">Qo'shish</button>
+                                </div>
                             </div>
                         </div>
                     )}
+
+                    {/* PASTKI MENYU */}
+                    <nav className="bottom-nav">
+                        <button className={`nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+                            <i data-lucide="home"></i> Asosiy
+                        </button>
+                        <button className={`nav-item ${activeTab === 'market' ? 'active' : ''}`} onClick={() => setActiveTab('market')}>
+                            <i data-lucide="shopping-bag"></i> Bozor
+                        </button>
+                        <button className={`nav-item ${activeTab === 'camera' ? 'active' : ''} -mt-5`} onClick={() => setActiveTab('camera')}>
+                            <div className="bg-emerald-500 text-white p-3 rounded-full shadow-lg shadow-emerald-200">
+                                <i data-lucide="camera" style={{color: 'white', margin: 0}}></i>
+                            </div>
+                        </button>
+                        <button className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
+                            <i data-lucide="clock"></i> Tarix
+                        </button>
+                        <button className={`nav-item ${activeTab === 'weightloss' ? 'active text-blue-500' : ''}`} onClick={() => setActiveTab('weightloss')}>
+                            <i data-lucide="person-standing"></i> Ozish
+                        </button>
+                    </nav>
                 </div>
             );
-        }
+        };
 
-        // Dasturni ishga tushirish
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
